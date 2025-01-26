@@ -1,9 +1,11 @@
-%% MINIMUM TENSION MOTION PLANNER
+%% Tension-aware Motion Planning for Tethered Robots
 % AUTHOR:           Rogerio Lima
 % DATE & PLACE:     November/2023 @ Morgantown/USA
 % VERSION:          1
-% DESCRIPTION:      This version searches the tension-aware graph (Gt) with 
-%                   Dijkstra, and searches G using Dijkstra and BFS.
+% DESCRIPTION:      This algorithm implements a minimum-tension path planner 
+%                   based on the method proposed in the paper 
+%                   "Tension-aware Motion Planning for Tethered Robots" 
+%                   by Rogerio Lima and Guilherme Pereira.
 % =========================================================================
 
 %% Pre set-up
@@ -37,9 +39,11 @@ SIM_3 = 3;
 SIM_4 = 4;
 SIM_5 = 5;
 SIM_6 = 6; % Choose environment and start/goal position manually
+SIM_7 = 7;
+SIM_8 = 8;
 
 % Only takes effect if "EXPERIMENT_SETUP = SETUP_0"
-SIMULATION_SETUP = SIM_1;
+SIMULATION_SETUP = SIM_3;
 
 % Print experimental results
 PRINT_EXPERIMENTAL_RESULTS = true;
@@ -48,7 +52,7 @@ PRINT_EXPERIMENTAL_RESULTS = true;
 UI_INTERFACE = false;
 
 % Save file: 0:disable | 1:enable
-SAVE_FILE = false;
+SAVE_FILE = true;
 
 % Debug mode: 0:disable | 1:text | 2:plot
 DEBUG = 0;
@@ -101,12 +105,12 @@ rng(5)
 % Load obstacles
 if (EXPERIMENT_SETUP == SETUP_1)
     obsFilename = 'Obstacles_4setup1';
-    ps = [0.04, 1.08];  % Start position:   Obstacles_4setup1*
-    pg = [1.93, 0.23];  % Goal position:    Obstacles_4setup1* 1.95, 0.25
+    ps = [0.04, 1.08];                      % Start position
+    pg = [1.93, 0.23];                      % Goal position
 elseif (EXPERIMENT_SETUP == SETUP_2)
     obsFilename = 'Obstacles_4setup2';
-    ps = [0.05, 0.17];  % Start position:  Obstacles_4setup2* [0.07, 0.07];
-    pg = [1.98, 1.10];  % Goal position:   Obstacles_4setup2* [1.98, 1.10]
+    ps = [0.05, 0.17]; 
+    pg = [1.98, 1.10];  
 else
     if (SIMULATION_SETUP == SIM_0)
         obsFilename = 'Obstacles_3';
@@ -133,16 +137,26 @@ else
         mu = [1, 0.5, 0.1];
         ps = [0.20, 4.80];
         pg = [14.80, 0.20];
-    elseif (SIMULATION_SETUP == SIM_5)      % 1 obstacle
+    elseif (SIMULATION_SETUP == SIM_5)      
         obsFilename = 'Obstacles_1Set4';
         ps = [1.50, 5.00];
         pg = [8.50, 5.00];
-        mu = rand(1, 5);    % Heterogeneous obstacles
-    elseif (SIMULATION_SETUP == SIM_6)      % Choose environments
+        mu = rand(1, 5);
+    elseif (SIMULATION_SETUP == SIM_6)      
         obsFilename = 'Obstacles_5';
         mu = rand(1, length(vectorObs));    
-        ps = [0.4758, 4.6020];              % Choose start position
-        pg = [4.7177, 0.2755];              % Choose goal position
+        ps = [0.4758, 4.6020];              
+        pg = [4.7177, 0.2755];            
+    elseif (SIMULATION_SETUP == SIM_7)
+        obsFilename = 'Obstacles_20Set6';
+        mu = rand(1, length(vectorObs));
+        ps = [0.4    0.2]; 
+        pg = [9.1    8.8];
+    elseif (SIMULATION_SETUP == SIM_8)
+        obsFilename = 'Obstacles_25Set6';
+        mu = rand(1, length(vectorObs));
+        ps = [0.4     1.6];
+        pg = [19.6    9.0];
     end
     
 
@@ -162,17 +176,16 @@ if (ENABLE_RANDOM_FRICTION)
         mu7 = [1      0.1   0.9     0.1       0.9     0.5     0.9     0.9];
         mu9=  [1      0.1   0.1     0.1       0.5     0.9     0.9     0.1       0.9     0.1];
         mu10= [1      0.1   0.8     0.1       0.5     0.9     0.9     0.1       0.8     0.1     0.1];
-    %     mu = mu2
         
     elseif (FRICTION_MODE == ENVIRONMENT)
-        mu = ones(1, length(vectorObs));   % Homogeneous obstacles
+        mu = ones(1, length(vectorObs));    % Homogeneous obstacles
     end
 else
     % Experiment setup 
     if (EXPERIMENT_SETUP ~= 0)
         muL = results.mu.plastic_cylinder;  % Lower mu
         muH = results.mu.cardboard;         % Higher mu
-        mu = [1 muH muH muL muH]; % Original
+        mu = [1 muH muH muL muH];           % Original
     end
 end
 
@@ -192,7 +205,7 @@ for m = 2 : length(vectorObs)
 
     % Computes the centroid to plot the obstacle numbers
     [xc, yc] = centroid(vectorObs{m});
-    text(xc, yc, sprintf('%d', m-1), "HorizontalAlignment","center")
+    text(xc, yc, sprintf('%d', m-1), "HorizontalAlignment","center", "FontSize",5)
 end
 pbaspect([1 1 1]);
 
@@ -255,7 +268,7 @@ else
 end
 connectIdx = 1;
 num_nodes = size(sorted_nodes, 1);
-visibilityTable = false(num_nodes);            % Visibility table
+visibilityTable = false(num_nodes);             % Visibility table
 for k=1:num_nodes - 1
     for j=k+1:num_nodes
         pp = partitionLine(sorted_nodes(k,:),...
@@ -263,7 +276,7 @@ for k=1:num_nodes - 1
         flagFreeNode = true;
         for m=1:size(pp,1)
             if (~isFree(pp(m,:)))
-                flagFreeNode = false;   % Needed just one false
+                flagFreeNode = false;           % Needed just one false
             end
         end
 
@@ -568,8 +581,8 @@ end
 fprintf('\nSIMULATION RESULTS\n')
 fprintf('Graph Search\t| Cost\t| Length\t| Legend\n')
 fprintf('----------------+-------+-----------+---------\n')
-fprintf('BFS\t\t\t\t| %1.2f \t| %1.2fm \t| %s\n', totalFrictionGE_BFS, tetherLengthGE_BFS, 'blue')
-fprintf('Dijkstra\t\t| %1.2f\t| %1.2fm \t| %s\n', totalFrictionG_Dks, tetherLengthG_Dks, 'red')
+fprintf('BFS\t\t| %1.2f \t| %1.2fm \t| %s\n', totalFrictionGE_BFS, tetherLengthGE_BFS, 'blue')
+fprintf('Dijkstra\t| %1.2f\t| %1.2fm \t| %s\n', totalFrictionG_Dks, tetherLengthG_Dks, 'red')
 fprintf('Tension-aware\t| %1.2f\t| %1.2fm \t| %s\n', totalFrictionGE_Dks, tetherLengthGE_Dks, 'green')
 
 % DEBUG LEVEL 1
@@ -613,10 +626,6 @@ function results = printExperimentalResults()
     deltaT_BFS = T_BFS - T0;
     deltaT_Dks = T_Dks - T0;
     deltaT_TAw = T_TAw - T0;
-
-%     T_BFS = T_BFS/T0;   % Normalization
-%     T_Dks = T_Dks/T0;   % Normalization
-%     T_TAw = T_TAw/T0;   % Normalization
 
     % Experiment #1
     % Mean

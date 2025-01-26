@@ -17,9 +17,4 @@ function d = matrix2digit(pos_lin, pos_col, NUM_COL)
         d = 1;
     else
         d = (pos_lin - 1) * NUM_COL + pos_col;
-%     if (pos_col > NUM_COL)
-%         display('Column position exceeds the size of the matrix column!!!');
-%     else
-%         d = (pos_lin - 1) * NUM_COL + pos_col;
-%     end
 end

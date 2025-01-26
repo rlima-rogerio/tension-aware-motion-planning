@@ -10,12 +10,6 @@ function list = partitionLine(p1,p2,len)
 %   OUTPUT
 %       pp:     (nx4) matrix representing all endpoints of the partitioned
 %               line. Ex. (xp1,yp1,xp2,yp2) for every line of the matrix.
-% retVal 
-
-% close all; clear all; clc;
-% p1 = [-10 -20]; 
-% p2 = [-45 -5];
-% len = 1;
 tol = 1e-3;
 
 x = [p1(1) p2(1)];
@@ -87,8 +81,3 @@ else
 end % else
 
 list = [ps1(1) ps1(2);pp(:,3:4)];
-    
-% % Debug
-% plot([p1(1) p2(1)], [p1(2) p2(2)],'k'); hold on; grid on;
-% plot(list(:,1),list(:,2),'r.'); hold on; grid on;
-% plot([pp(idx,1) pp(idx,3)], [pp(idx,2) pp(idx,4)],'vg'); hold on; grid on;

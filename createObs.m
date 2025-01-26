@@ -1,10 +1,7 @@
-
-%% HOMERWORK #1 - PROBLEM #1
-% COURSE:           Robot Motion Planning (MAE-593A)
-% PROFESSOR:        Dr. Guilherme Pereira
-% STUDENT NAME:     Rogerio Lima
-% STUDENT WVU ID:   800 329 625
-% DATE & PLACE:     August/2020 @ WVU - Morgantown
+% =========================================================================
+% WHO:      Rogerio Lima
+% WHEN      August/2020 
+% WHERE:    WVU - Morgantown
 % =========================================================================
 
 %% Pre set-up
